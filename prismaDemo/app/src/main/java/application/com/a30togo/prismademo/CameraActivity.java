@@ -209,6 +209,12 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback,
             }
 
             Intent intent = new Intent(CameraActivity.this,TestActivity.class);
+
+            new AsyncTaskParseJson().execute();
+
+
+
+
             startActivity(intent);
             //camera.startPreview();
         }
