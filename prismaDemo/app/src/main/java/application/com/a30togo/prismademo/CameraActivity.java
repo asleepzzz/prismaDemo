@@ -28,7 +28,6 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.appindexing.AppIndex;
@@ -174,6 +173,7 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback,
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 }
+                mTaskPicture.setEnabled(false);
             }
         });
     }
@@ -484,7 +484,13 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback,
                         }
                     }
 
-                    Intent intent = new Intent(CameraActivity.this,TestActivity.class);
+                    CameraActivity.this.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            mTaskPicture.setEnabled(true);
+                        }
+                    });
+                    Intent intent = new Intent(CameraActivity.this, TestActivity.class);
 
                     startActivity(intent);
 
