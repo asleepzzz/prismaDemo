@@ -9,6 +9,21 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="please wait......"
+        android:textSize="30dp"
+        android:textColor="#ff0000"
+        android:layout_above="@+id/my_spinner"
+        android:visibility="gone"
+        android:id="@+id/loading_message"/>
+
+    <Spinner
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/taskPicture"
+        android:id="@+id/my_spinner"/>
     <Button android:id="@+id/taskPicture"
         android:layout_width="match_parent"
         android:layout_height="50dp"

@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
@@ -12,21 +13,42 @@ import android.hardware.Camera;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
+import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.Spinner;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.common.api.GoogleApiClient;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -38,6 +60,16 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback,
     private SurfaceHolder mSurfaceHolder;
     private Button mTaskPicture;
     private Camera camera;
+    private boolean isMulti;
+    private TextView loading_message;
+    private int resolutionSelected;
+    private String sdcardPath = Environment.getExternalStorageDirectory().getAbsolutePath();
+    final static private String SERVER_PORT = "5000";
+    final static private String SERVER_IP = "10.33.130.123";
+    final static private String API_UPLOAD1 = "file";
+    final static private String TMP_NAME = "takepicture.jpg";
+    private int ANDROID_ACCESS_INSTAGRAM_WEBSERVICES = 002;
+
     /**
      * ATTENTION: This was auto-generated to implement the App Indexing API.
      * See https://g.co/AppIndexing/AndroidStudio for more information.
@@ -53,7 +85,11 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback,
         // 無標題
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         // 直式
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        if (this.getResources().getConfiguration().orientation != Configuration.ORIENTATION_LANDSCAPE) {
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        } else {
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+        }
 
         setContentView(R.layout.activity_camera);
 
@@ -61,7 +97,69 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback,
         // ATTENTION: This was auto-generated to implement the App Indexing API.
         // See https://g.co/AppIndexing/AndroidStudio for more information.
         client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
+        Intent intent = getIntent();
+        isMulti = intent.getBooleanExtra("isMulti",false);
+        resolutionSelected = 0;//intent.getIntExtra("resolutionSelected",0);
+
+
+        loading_message = (TextView)findViewById(R.id.loading_message);
+        Log.e("kevin","isMulti "+isMulti);
+
+        Spinner spinner=(Spinner) findViewById(R.id.my_spinner);
+        String[] lunch = {"1920x1080", "1280x720", "640x480"};
+        ArrayAdapter<String> lunchList = new ArrayAdapter<String>(CameraActivity.this, android.R.layout.simple_spinner_item, lunch);
+        spinner.setAdapter(lunchList);
+        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){
+
+            @Override
+            public void onItemSelected(AdapterView<?> arg0, View arg1, int position, long arg3) {
+                resolutionSelected = position;
+                //Toast.makeText(mContext, "你選的是"+lunch[position], Toast.LENGTH_SHORT).show();
+                Camera.Parameters parameters = camera.getParameters();
+                // 取得照片尺寸
+                List<Camera.Size> supportedPictureSizes = parameters.getSupportedPictureSizes();
+                int sptw = supportedPictureSizes.get(supportedPictureSizes.size() - 1).width;
+                int spth = supportedPictureSizes.get(supportedPictureSizes.size() - 1).height;
+
+                // 取得預覽尺寸
+                List<Camera.Size> supportedPreviewSizes = parameters.getSupportedPreviewSizes();
+                int prvw = supportedPreviewSizes.get(0).width;
+                int prvh = supportedPreviewSizes.get(0).height;
+
+//                for (int j = 0;j<supportedPreviewSizes.size();j++) {
+//                    Log.e("kevin","j= "+j+" width "+supportedPreviewSizes.get(j).width+" height "+supportedPreviewSizes.get(j).height);
+//                }
+
+                parameters.setPictureFormat(PixelFormat.JPEG);
+                int width = 640;
+                int height = 480;
+                if (resolutionSelected ==1) {
+                    width = 1280;
+                    height = 720;
+                } else if (resolutionSelected ==0) {
+                    width = 1920;
+                    height = 1080;
+                }
+
+                parameters.setPreviewSize(width, height);
+                parameters.setPictureSize(width, height);
+
+                camera.setParameters(parameters);
+                camera.stopPreview();
+                camera.startPreview();
+            }
+            @Override
+            public void onNothingSelected(AdapterView<?> arg0) {
+            }
+        });
     }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loading_message.setVisibility(View.GONE);
+    }
+
 
     private void initViews() {
         mSurfaceView = (SurfaceView) this.findViewById(R.id.svPreview);
@@ -94,8 +192,14 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback,
     public void surfaceCreated(SurfaceHolder surfaceHolder) {
         camera = Camera.open();
 
-        if (Build.VERSION.SDK_INT >= 8)
-            camera.setDisplayOrientation(90);
+        if (Build.VERSION.SDK_INT >= 8) {
+            if (this.getResources().getConfiguration().orientation != Configuration.ORIENTATION_LANDSCAPE) {
+                camera.setDisplayOrientation(90);
+            } else {
+                camera.setDisplayOrientation(0);
+            }
+
+        }
 
         try {
             camera.setPreviewDisplay(surfaceHolder);
@@ -119,8 +223,24 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback,
         int prvw = supportedPreviewSizes.get(0).width;
         int prvh = supportedPreviewSizes.get(0).height;
 
+//        for (int j = 0;j<supportedPreviewSizes.size();j++) {
+//            Log.e("kevin","j= "+j+" width "+supportedPreviewSizes.get(j).width+" height "+supportedPreviewSizes.get(j).height);
+//        }
+        //Log.e("kevin","getResources().getConfiguration().orientation "+getResources().getConfiguration().orientation);
+
         parameters.setPictureFormat(PixelFormat.JPEG);
-        parameters.setPreviewSize(640, 480);
+        int width = 640;
+        int height = 480;
+        if (resolutionSelected ==1) {
+            width = 1280;
+            height = 720;
+        } else if (resolutionSelected ==0) {
+            width = 1920;
+            height = 1080;
+        }
+
+        parameters.setPreviewSize(width, height);
+        parameters.setPictureSize(width, height);
 
         camera.setParameters(parameters);
         camera.startPreview();
@@ -174,24 +294,30 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback,
     }
 
     public void saveBitmap(Bitmap bitmap) {
-
+        loading_message.setVisibility(View.VISIBLE);
         FileOutputStream fOut;
         try {
-            File dir = new File("/sdcard/demo/");
+            File dir = new File(sdcardPath+"/demo/");
             if (!dir.exists()) {
                 dir.mkdir();
             }
 
-            String tmp = "/sdcard/demo/takepicture.jpg";
+            String tmp = sdcardPath+"/demo/"+TMP_NAME;
             fOut = new FileOutputStream(tmp);
             bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fOut);
 
             try {
                 fOut.flush();
                 fOut.close();
+                Log.e("kevin","saveBitmap");
+                Thread accessWebServiceThread = new Thread(new WebServiceHandler(""));
+                accessWebServiceThread.start();
+                //File save_pic = new File(tmp);
+                //uploadFileAndStringImp(getUploadApi(),TMP_NAME,save_pic);
             } catch (IOException e) {
                 e.printStackTrace();
             }
+
 
             sendToGallery(this, tmp);
         } catch (FileNotFoundException e) {
@@ -208,21 +334,28 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback,
                 saveBitmap(picture);
             }
 
-            Intent intent = new Intent(CameraActivity.this,TestActivity.class);
+            //List<String> bitmapRes = new ArrayList<String>();
+//            bitmapRes.add("http://blog.adoptandshop.org/wp-content/uploads/2014/04/lab-with-pet-id-tag.jpg");
+//            bitmapRes.add("http://i.cbc.ca/1.3479322.1457370231!/fileImage/httpImage/image.jpg_gen/derivatives/16x9_620/panda-cubs.jpg");
+//            bitmapRes.add("http://www.gosouthfrance.com/images/stories/sites/425/pont_du_gard.jpg");
+            //TestActivity.setImgRes(bitmapRes);
 
-            new AsyncTaskParseJson().execute();
 
-
-
-
-            startActivity(intent);
+//            Intent intent = new Intent(CameraActivity.this,TestActivity.class);
+//            //new AsyncTaskParseJson().execute();
+//            startActivity(intent);
             //camera.startPreview();
         }
     };
 
     public Bitmap rotationBitmap(Bitmap picture) {
         Matrix matrix = new Matrix();
-        matrix.postRotate(90);
+        if (this.getResources().getConfiguration().orientation != Configuration.ORIENTATION_LANDSCAPE) {
+            matrix.postRotate(90);
+        } else {
+            matrix.postRotate(0);
+        }
+        Log.e("kevin","rotationBitmap "+picture.getWidth()+" "+picture.getHeight());
         Bitmap scaledBitmap = Bitmap.createScaledBitmap(picture,picture.getWidth(),picture.getHeight(),true);
         Bitmap rotatedBitmap = Bitmap.createBitmap(scaledBitmap , 0, 0, scaledBitmap .getWidth(), scaledBitmap .getHeight(), matrix, true);
         return rotatedBitmap;
@@ -234,4 +367,188 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback,
         intent.setData(contentUri);
         ctx.sendBroadcast(intent);
     }
+
+
+
+    private String uploadFileAndStringImp(String actionUrl, String newName, File uploadFile) throws IOException {
+        String end = "\r\n";
+        String twoHyphens = "--";
+        String boundary = "*****";
+
+//        if(LogUtil.DEBUG)
+//            LogUtil.log(TAG, "uploadFileAndStringImp:" + actionUrl);
+
+        URL url = new URL(actionUrl);
+        HttpURLConnection con = (HttpURLConnection) url.openConnection();
+        Log.e("kevin","uploadFileAndStringImp");
+        int TIME_OUT = 6000;
+        int LONG_TIME_OUT = 30000;
+        if (isMulti) {
+            con.setConnectTimeout(LONG_TIME_OUT);
+            con.setReadTimeout(LONG_TIME_OUT);
+        } else {
+            con.setConnectTimeout(TIME_OUT);
+            con.setReadTimeout(TIME_OUT);
+        }
+
+//        if(LogUtil.DEBUG)
+//            LogUtil.log(TAG, "getConnectTimeout:" + con.getConnectTimeout() + ", getReadTimeout:" + con.getReadTimeout());
+
+
+        /* 允许Input、Output，不使用Cache */
+        con.setDoInput(true);
+        con.setDoOutput(true);
+        con.setUseCaches(false);
+        /* 设置传送的method=POST */
+        con.setRequestMethod("POST");
+        /* setRequestProperty */
+        con.setRequestProperty("Connection", "Keep-Alive");
+        con.setRequestProperty("Charset", "UTF-8");
+        con.setRequestProperty("Content-Type", "multipart/form-data;boundary=" + boundary);
+        /* 设置DataOutputStream */
+        DataOutputStream ds = new DataOutputStream(con.getOutputStream());
+        ds.writeBytes(twoHyphens + boundary + end);
+        ds.writeBytes("Content-Disposition: form-data; " + "name=\"userfile\";filename=\"" + newName + "\"" + end);
+        ds.writeBytes(end);
+
+        /* 取得文件的FileInputStream */
+        FileInputStream fStream = new FileInputStream(uploadFile);
+        /* 设置每次写入1024bytes */
+        int bufferSize = 1024;
+        byte[] buffer = new byte[bufferSize];
+
+        int length = -1;
+        /* 从文件读取数据至缓冲区 */
+        while ((length = fStream.read(buffer)) != -1) {
+            /* 将资料写入DataOutputStream中 */
+            ds.write(buffer, 0, length);
+        }
+        ds.writeBytes(end);
+
+//        if(LogUtil.DEBUG) LogUtil.log(TAG, "file written completed");
+
+        // -----
+        ds.writeBytes(twoHyphens + boundary + end);
+        ds.writeBytes("Content-Disposition: form-data;name=\"mode\"" + end);
+        Log.e("kevin","isMulti "+isMulti);
+        if (isMulti) {
+            ds.writeBytes(end + URLEncoder.encode("2", "UTF-8") + end);
+        } else {
+            ds.writeBytes(end + URLEncoder.encode("1", "UTF-8") + end);
+        }
+        // -----
+
+        ds.writeBytes(twoHyphens + boundary + twoHyphens + end);
+        /* close streams */
+
+        ds.flush();
+//
+//        if(LogUtil.DEBUG) LogUtil.log(TAG, "flushed");
+        Log.e("kevin","flushed ");
+        /* 取得Response内容 */
+        InputStream is = con.getInputStream();
+//        if(LogUtil.DEBUG) LogUtil.log(TAG, "getInputStream");
+        int ch;
+        StringBuilder b = new StringBuilder();
+        while ((ch = is.read()) != -1) {
+            b.append((char) ch);
+        }
+        Log.e("kevin","b.toString() "+b.toString());
+//        if(LogUtil.DEBUG)
+//            LogUtil.log(TAG, "response:" + b.toString());
+        /* 关闭DataOutputStream */
+        fStream.close();
+        ds.close();
+        con.disconnect();
+
+        return b.toString();
+    }
+
+    public static String getUploadApi() {
+//        LogUtil.log(TAG, "getUploadApi : http://" + SERVER_IP + ":" + SERVER_PORT + "/" + API_UPLOAD1);
+        return "http://" + SERVER_IP + ":" + SERVER_PORT + "/" + API_UPLOAD1;
+    }
+
+    class WebServiceHandler implements Runnable{
+
+        private String igUrl;
+        public WebServiceHandler (String url) {
+            igUrl = url;
+        }
+        @Override
+        public void run() {
+
+            Looper.prepare();
+            String tmp = sdcardPath+"/demo/"+TMP_NAME;
+            File save_pic = new File(tmp);
+            try {
+                String serverReply = uploadFileAndStringImp(getUploadApi(),TMP_NAME,save_pic);
+                try {
+                    JSONObject jObj = new JSONObject(serverReply);
+                    int mode =jObj.getInt("mode");
+                    if (mode ==1) {
+                        String url = jObj.getString("file");
+                        List<String> bitmapRes = new ArrayList<String>();
+                        bitmapRes.add("http://"+SERVER_IP+":"+SERVER_PORT+"/"+url);
+                        TestActivity.setImgRes(bitmapRes);
+                        Log.e("kevin","url "+url);
+                    } else {
+
+
+                        if (jObj != null) {
+                            JSONArray dataJsonArr = jObj.getJSONArray("file_list");
+                            List<String> bitmapRes = new ArrayList<String>();
+
+
+// loop through all users
+                            for (int i = 0; i < dataJsonArr.length(); i++) {
+
+                                String url = dataJsonArr.getString(i);
+                                bitmapRes.add("http://"+SERVER_IP+":"+SERVER_PORT+"/"+url);
+
+//                            JSONObject c = dataJsonArr.getJSONObject(i);
+//
+//// Storing each json item in variable
+//                            String url = c.getString("url");
+                                Log.e("kevin", "url " + url);
+                            }
+                            TestActivity.setImgRes(bitmapRes);
+                        }
+                    }
+
+                    Intent intent = new Intent(CameraActivity.this,TestActivity.class);
+
+                    startActivity(intent);
+
+                } catch (JSONException e) {
+                    Log.e("kevin", "Error parsing data " + e.toString());
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            String result = "uploadsuccess";
+            Message message = new Message();
+            Bundle bundle = new Bundle();
+            bundle.putString("result", result);
+            message.what = ANDROID_ACCESS_INSTAGRAM_WEBSERVICES;//设置消息标示
+            message.obj = "zxn";
+            message.setData(bundle);//消息内容
+            handler.sendMessage(message);//发送消息
+            Looper.loop();
+        }
+
+    }
+
+    private Handler handler = new Handler(){
+        @Override
+        public void handleMessage(Message msg) {
+            String result = (String) msg.getData().get("result");
+            String obj = (String) msg.obj;//
+            if (result.equals("uploadsuccess")) {
+                Log.e("kevin","upload success");
+            }
+        }
+
+    };
+
 }

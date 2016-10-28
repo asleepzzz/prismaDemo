@@ -6,6 +6,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -37,20 +38,22 @@ public class TestActivity extends AppCompatActivity {
     private ImageView mImageView;
 
     private int nowPicPos = 0;
-
+    private String sdcardPath = Environment.getExternalStorageDirectory().getAbsolutePath();
     //private int[] imgRes = {R.drawable.panda, R.drawable.raccoon,R.drawable.dog};
     private List<Bitmap> bitmapRes = new ArrayList<Bitmap>();
 
 
-    static public String[] imgRes2 = {"http://blog.adoptandshop.org/wp-content/uploads/2014/04/lab-with-pet-id-tag.jpg",
-            "http://i.cbc.ca/1.3479322.1457370231!/fileImage/httpImage/image.jpg_gen/derivatives/16x9_620/panda-cubs.jpg",
-    "http://www.gosouthfrance.com/images/stories/sites/425/pont_du_gard.jpg"};
+//    static public String[] imgRes2 = {"http://blog.adoptandshop.org/wp-content/uploads/2014/04/lab-with-pet-id-tag.jpg",
+//            "http://i.cbc.ca/1.3479322.1457370231!/fileImage/httpImage/image.jpg_gen/derivatives/16x9_620/panda-cubs.jpg",
+//    "http://www.gosouthfrance.com/images/stories/sites/425/pont_du_gard.jpg"};
 
 
-    static public List<String> imgRes;
+    static public List<String> imgRes= new ArrayList<String>();
 
     static public void setImgRes(List<String> input) {
-        imgRes.clear();
+
+            imgRes.clear();
+
         for (int i = 0;i< input.size();i++) {
             imgRes.add(input.get(i));
         }
@@ -64,8 +67,8 @@ public class TestActivity extends AppCompatActivity {
             if (result.equals("complete")) {
 
 
-                for (int i = 0;i<imgRes2.length;i++) {
-                    String tmp = "/sdcard/demo2/"+i+".jpg";
+                for (int i = 0;i<imgRes.size();i++) {
+                    String tmp = sdcardPath+"/demo2/"+i+".jpg";
                     BitmapFactory.Options options = new BitmapFactory.Options();
                     options.inPreferredConfig = Bitmap.Config.ARGB_8888;
                     Bitmap bitmap = BitmapFactory.decodeFile(tmp, options);
@@ -75,7 +78,11 @@ public class TestActivity extends AppCompatActivity {
                 }
                 Log.e("kevin","complete "+bitmapRes.size());
 
-                fadeOutAndHideImage(mImageView);
+                if (imgRes.size()==1) {
+                    mImageView.setImageBitmap(bitmapRes.get(nowPicPos));
+                } else {
+                    fadeOutAndHideImage(mImageView);
+                }
             }
         }
 
@@ -89,16 +96,17 @@ public class TestActivity extends AppCompatActivity {
         }
         @Override
         public void run() {
-            String tmp = "/sdcard/demo2/";
+            Log.e("kevin","sdcardPath "+sdcardPath);
+            String tmp = sdcardPath+"/demo2/";
             File file = new File(tmp);
             DeleteFile(file);
             bitmapRes.clear();
             Looper.prepare();
             Toast.makeText(getApplicationContext(),"downloading",Toast.LENGTH_SHORT).show();
-            for (int i = 0;i<imgRes2.length;i++) {
+            for (int i = 0;i<imgRes.size();i++) {
                 try {
                     Log.e("kevin","add "+i);
-                    saveBitmap(drawable_from_url(imgRes2[i]),i);
+                    saveBitmap(drawable_from_url(imgRes.get(i)),i);
                     //bitmapRes.add(drawable_from_url(imgRes2[i]));
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -191,7 +199,7 @@ public class TestActivity extends AppCompatActivity {
 
         FileOutputStream fOut;
         try {
-            File dir = new File("/sdcard/demo2/");
+            File dir = new File(sdcardPath+"/demo2/");
             if (!dir.exists()) {
                 Log.e("kevin","mkdir");
                 dir.mkdir();
@@ -199,7 +207,7 @@ public class TestActivity extends AppCompatActivity {
                 Log.e("kevin","fuck");
             }
 
-            String tmp = "/sdcard/demo2/"+index+".jpg";
+            String tmp = sdcardPath+"/demo2/"+index+".jpg";
             fOut = new FileOutputStream(tmp);
             bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fOut);
 
