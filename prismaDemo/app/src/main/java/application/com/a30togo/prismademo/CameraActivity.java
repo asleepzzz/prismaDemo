@@ -17,15 +17,20 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 
@@ -55,10 +60,13 @@ import java.util.List;
  */
 public class CameraActivity extends Activity implements SurfaceHolder.Callback,
         Camera.AutoFocusCallback {
+    private static final String TAG = "CameraActivity";
     private SurfaceView mSurfaceView;
     private SurfaceHolder mSurfaceHolder;
     private Button mTaskPicture;
     private Camera camera;
+    private LinearLayout mStyleList;
+//    private GridView mGridView;
     private boolean isMulti;
     private TextView loading_message;
     private int resolutionSelected;
@@ -68,6 +76,7 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback,
     final static private String API_UPLOAD1 = "file";
     final static private String TMP_NAME = "takepicture.jpg";
     private int ANDROID_ACCESS_INSTAGRAM_WEBSERVICES = 002;
+    private int mCurrentModelIndex = 0;
 
     /**
      * ATTENTION: This was auto-generated to implement the App Indexing API.
@@ -176,8 +185,38 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback,
                 mTaskPicture.setEnabled(false);
             }
         });
+
+        mStyleList = (LinearLayout) findViewById(R.id.style_list);
+        initStyleList();
     }
 
+    private void initStyleList() {
+        final int styleCount = StyleQuery.getStyleCnt();
+        if (styleCount <= 0) return;
+
+        for (int styleIndex = 0; styleIndex < styleCount; styleIndex++) {
+            LinearLayout styleItem = (LinearLayout) LayoutInflater.from(this).inflate(R.layout.style_grid_item, mStyleList, false);
+            ImageView styleImage = (ImageView) styleItem.findViewById(R.id.style_image);
+            TextView textView = (TextView) styleItem.findViewById(R.id.style_text);
+            styleImage.setImageBitmap(StyleQuery.getBitmap(styleIndex));
+            textView.setText(StyleQuery.getStyle(styleIndex));
+            if (styleIndex == 0) styleItem.setBackground(ContextCompat.getDrawable(CameraActivity.this, R.color.colorPrimary));
+
+            final int finalStyleIndex = styleIndex;
+            styleItem.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    mCurrentModelIndex = finalStyleIndex;
+                    Log.i(TAG, "select style: " + StyleQuery.getStyle(mCurrentModelIndex) + ", index=" + mCurrentModelIndex);
+                    for (int childIndex = 0; childIndex < mStyleList.getChildCount(); childIndex++) {
+                        mStyleList.getChildAt(childIndex).setBackground(null);
+                    }
+                    view.setBackground(ContextCompat.getDrawable(CameraActivity.this, R.color.colorPrimary));
+                }
+            });
+            mStyleList.addView(styleItem);
+        }
+    }
 
     @Override
     public void onAutoFocus(boolean b, Camera camera) {
@@ -351,7 +390,7 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback,
 
 
 
-    private String uploadFileAndStringImp(String actionUrl, String newName, File uploadFile) throws IOException {
+    private String uploadFileAndStringImp(String actionUrl, String newName, File uploadFile, String styleModel) throws IOException {
         String end = "\r\n";
         String twoHyphens = "--";
         String boundary = "*****";
@@ -417,6 +456,10 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback,
             ds.writeBytes(end + URLEncoder.encode("1", "UTF-8") + end);
         }
         // -----
+        ds.writeBytes(twoHyphens + boundary + end);
+
+        ds.writeBytes("Content-Disposition: form-data;name=\"model\"" + end);
+        ds.writeBytes(end + URLEncoder.encode(styleModel, "UTF-8") + end);
 
         ds.writeBytes(twoHyphens + boundary + twoHyphens + end);
         /* close streams */
@@ -462,7 +505,8 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback,
             String tmp = sdcardPath+"/demo/"+TMP_NAME;
             File save_pic = new File(tmp);
             try {
-                String serverReply = uploadFileAndStringImp(getUploadApi(),TMP_NAME,save_pic);
+                String serverReply = uploadFileAndStringImp(getUploadApi(),TMP_NAME,save_pic,
+                        StyleQuery.getStyle(mCurrentModelIndex));
                 try {
                     JSONObject jObj = new JSONObject(serverReply);
                     int mode =jObj.getInt("mode");
