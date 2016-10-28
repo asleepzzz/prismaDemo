@@ -178,6 +178,8 @@ public class TestActivity extends AppCompatActivity {
         InputStream input = connection.getInputStream();
 
         x = BitmapFactory.decodeStream(input);
+        input.close();
+        connection.disconnect();
         return x;
     }
 

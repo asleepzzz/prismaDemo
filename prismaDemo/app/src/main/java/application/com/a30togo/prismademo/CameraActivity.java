@@ -438,6 +438,7 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback,
         /* 关闭DataOutputStream */
         fStream.close();
         ds.close();
+        is.close();
         con.disconnect();
 
         return b.toString();
