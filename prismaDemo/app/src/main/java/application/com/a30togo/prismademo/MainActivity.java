@@ -27,7 +27,6 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 Intent intent = new Intent(MainActivity.this,CameraActivity.class);
                 intent.putExtra("isMulti",false);
-                intent.putExtra("resolutionSelected",resolutionSelected);
                 startActivity(intent);
             }
         });
@@ -38,7 +37,6 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 Intent intent = new Intent(MainActivity.this,CameraActivity.class);
                 intent.putExtra("isMulti",true);
-                intent.putExtra("resolutionSelected",resolutionSelected);
                 startActivity(intent);
             }
         });

@@ -39,13 +39,7 @@ public class TestActivity extends AppCompatActivity {
 
     private int nowPicPos = 0;
     private String sdcardPath = Environment.getExternalStorageDirectory().getAbsolutePath();
-    //private int[] imgRes = {R.drawable.panda, R.drawable.raccoon,R.drawable.dog};
     private List<Bitmap> bitmapRes = new ArrayList<Bitmap>();
-
-
-//    static public String[] imgRes2 = {"http://blog.adoptandshop.org/wp-content/uploads/2014/04/lab-with-pet-id-tag.jpg",
-//            "http://i.cbc.ca/1.3479322.1457370231!/fileImage/httpImage/image.jpg_gen/derivatives/16x9_620/panda-cubs.jpg",
-//    "http://www.gosouthfrance.com/images/stories/sites/425/pont_du_gard.jpg"};
 
 
     static public List<String> imgRes= new ArrayList<String>();
@@ -65,8 +59,6 @@ public class TestActivity extends AppCompatActivity {
             String result = (String) msg.getData().get("result");
             String obj = (String) msg.obj;//
             if (result.equals("complete")) {
-
-
                 for (int i = 0;i<imgRes.size();i++) {
                     String tmp = sdcardPath+"/demo2/"+i+".jpg";
                     BitmapFactory.Options options = new BitmapFactory.Options();
@@ -96,7 +88,6 @@ public class TestActivity extends AppCompatActivity {
         }
         @Override
         public void run() {
-            Log.e("kevin","sdcardPath "+sdcardPath);
             String tmp = sdcardPath+"/demo2/";
             File file = new File(tmp);
             DeleteFile(file);
@@ -105,9 +96,7 @@ public class TestActivity extends AppCompatActivity {
             Toast.makeText(getApplicationContext(),"downloading",Toast.LENGTH_SHORT).show();
             for (int i = 0;i<imgRes.size();i++) {
                 try {
-                    Log.e("kevin","add "+i);
                     saveBitmap(drawable_from_url(imgRes.get(i)),i);
-                    //bitmapRes.add(drawable_from_url(imgRes2[i]));
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -154,9 +143,6 @@ public class TestActivity extends AppCompatActivity {
         mImageView = (ImageView) findViewById(R.id.img);
         Thread accessWebServiceThread = new Thread(new WebServiceHandler(""));
         accessWebServiceThread.start();
-
-        //local
-        //fadeOutAndHideImage(mImageView);
     }
 
     private void fadeOutAndHideImage(final ImageView img){
@@ -201,10 +187,7 @@ public class TestActivity extends AppCompatActivity {
         try {
             File dir = new File(sdcardPath+"/demo2/");
             if (!dir.exists()) {
-                Log.e("kevin","mkdir");
                 dir.mkdir();
-            } else {
-                Log.e("kevin","fuck");
             }
 
             String tmp = sdcardPath+"/demo2/"+index+".jpg";

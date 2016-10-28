@@ -103,7 +103,6 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback,
 
 
         loading_message = (TextView)findViewById(R.id.loading_message);
-        Log.e("kevin","isMulti "+isMulti);
 
         Spinner spinner=(Spinner) findViewById(R.id.my_spinner);
         String[] lunch = {"1920x1080", "1280x720", "640x480"};
@@ -114,7 +113,6 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback,
             @Override
             public void onItemSelected(AdapterView<?> arg0, View arg1, int position, long arg3) {
                 resolutionSelected = position;
-                //Toast.makeText(mContext, "你選的是"+lunch[position], Toast.LENGTH_SHORT).show();
                 Camera.Parameters parameters = camera.getParameters();
                 // 取得照片尺寸
                 List<Camera.Size> supportedPictureSizes = parameters.getSupportedPictureSizes();
@@ -226,7 +224,6 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback,
 //        for (int j = 0;j<supportedPreviewSizes.size();j++) {
 //            Log.e("kevin","j= "+j+" width "+supportedPreviewSizes.get(j).width+" height "+supportedPreviewSizes.get(j).height);
 //        }
-        //Log.e("kevin","getResources().getConfiguration().orientation "+getResources().getConfiguration().orientation);
 
         parameters.setPictureFormat(PixelFormat.JPEG);
         int width = 640;
@@ -309,11 +306,8 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback,
             try {
                 fOut.flush();
                 fOut.close();
-                Log.e("kevin","saveBitmap");
                 Thread accessWebServiceThread = new Thread(new WebServiceHandler(""));
                 accessWebServiceThread.start();
-                //File save_pic = new File(tmp);
-                //uploadFileAndStringImp(getUploadApi(),TMP_NAME,save_pic);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -333,18 +327,6 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback,
                 picture = rotationBitmap(picture);
                 saveBitmap(picture);
             }
-
-            //List<String> bitmapRes = new ArrayList<String>();
-//            bitmapRes.add("http://blog.adoptandshop.org/wp-content/uploads/2014/04/lab-with-pet-id-tag.jpg");
-//            bitmapRes.add("http://i.cbc.ca/1.3479322.1457370231!/fileImage/httpImage/image.jpg_gen/derivatives/16x9_620/panda-cubs.jpg");
-//            bitmapRes.add("http://www.gosouthfrance.com/images/stories/sites/425/pont_du_gard.jpg");
-            //TestActivity.setImgRes(bitmapRes);
-
-
-//            Intent intent = new Intent(CameraActivity.this,TestActivity.class);
-//            //new AsyncTaskParseJson().execute();
-//            startActivity(intent);
-            //camera.startPreview();
         }
     };
 
@@ -355,7 +337,6 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback,
         } else {
             matrix.postRotate(0);
         }
-        Log.e("kevin","rotationBitmap "+picture.getWidth()+" "+picture.getHeight());
         Bitmap scaledBitmap = Bitmap.createScaledBitmap(picture,picture.getWidth(),picture.getHeight(),true);
         Bitmap rotatedBitmap = Bitmap.createBitmap(scaledBitmap , 0, 0, scaledBitmap .getWidth(), scaledBitmap .getHeight(), matrix, true);
         return rotatedBitmap;
@@ -430,7 +411,6 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback,
         // -----
         ds.writeBytes(twoHyphens + boundary + end);
         ds.writeBytes("Content-Disposition: form-data;name=\"mode\"" + end);
-        Log.e("kevin","isMulti "+isMulti);
         if (isMulti) {
             ds.writeBytes(end + URLEncoder.encode("2", "UTF-8") + end);
         } else {
@@ -444,7 +424,6 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback,
         ds.flush();
 //
 //        if(LogUtil.DEBUG) LogUtil.log(TAG, "flushed");
-        Log.e("kevin","flushed ");
         /* 取得Response内容 */
         InputStream is = con.getInputStream();
 //        if(LogUtil.DEBUG) LogUtil.log(TAG, "getInputStream");
@@ -453,7 +432,7 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback,
         while ((ch = is.read()) != -1) {
             b.append((char) ch);
         }
-        Log.e("kevin","b.toString() "+b.toString());
+
 //        if(LogUtil.DEBUG)
 //            LogUtil.log(TAG, "response:" + b.toString());
         /* 关闭DataOutputStream */
@@ -491,26 +470,15 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback,
                         List<String> bitmapRes = new ArrayList<String>();
                         bitmapRes.add("http://"+SERVER_IP+":"+SERVER_PORT+"/"+url);
                         TestActivity.setImgRes(bitmapRes);
-                        Log.e("kevin","url "+url);
                     } else {
 
 
                         if (jObj != null) {
                             JSONArray dataJsonArr = jObj.getJSONArray("file_list");
                             List<String> bitmapRes = new ArrayList<String>();
-
-
-// loop through all users
                             for (int i = 0; i < dataJsonArr.length(); i++) {
-
                                 String url = dataJsonArr.getString(i);
                                 bitmapRes.add("http://"+SERVER_IP+":"+SERVER_PORT+"/"+url);
-
-//                            JSONObject c = dataJsonArr.getJSONObject(i);
-//
-//// Storing each json item in variable
-//                            String url = c.getString("url");
-                                Log.e("kevin", "url " + url);
                             }
                             TestActivity.setImgRes(bitmapRes);
                         }

@@ -31,15 +31,12 @@ public class JsonParser {
     static String json = "";
 
     public JSONObject getJSONFromUrl(String urlString) {
-        Log.e("kevin","getJSONFromUrl " );
         // make HTTP request
         try {
             // 新建一个URL对象
             URL url = new URL(urlString);
             // 打开一个HttpURLConnection连接
             HttpURLConnection urlConn = (HttpURLConnection) url.openConnection();
-//            urlConn.setRequestProperty("Accept-Charset", "UTF-8");
-//            urlConn.setRequestMethod("GET");
             // 设置连接超时时间
             urlConn.setConnectTimeout(6 * 1000);
             // 开始连接
@@ -48,8 +45,6 @@ public class JsonParser {
             if (urlConn.getResponseCode() == urlConn.HTTP_OK) {
                 is =urlConn.getInputStream();
                 // 获取返回的数据
-                Log.i("kevin", "ok");
-
                 try {
 
                     BufferedReader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"), 8);
@@ -57,18 +52,17 @@ public class JsonParser {
                     String line = null;
 
                     while ((line = reader.readLine()) != null) {
-                        Log.e("kevin","line "+line );
+
                         sb.append(line + "\n");
                     }
                     is.close();
                     json = sb.toString();
-                    Log.e("kevin","json "+json );
 
                 } catch (Exception e) {
                     Log.e(TAG, "Error converting result " + e.toString());
                 }
 
-                // try parse the string to a JSON object
+
                 try {
                     jObj = new JSONObject(json);
                 } catch (JSONException e) {
@@ -76,10 +70,7 @@ public class JsonParser {
                 }
 
             } else {
-                Log.i("kevin", "no ok");
-                //Log.i(TAG_GET, "Get方式请求失败");
             }
-            // 关闭连接
             urlConn.disconnect();
 
 
