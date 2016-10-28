@@ -12,11 +12,8 @@ import android.os.Looper;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.View;
-import android.view.animation.AccelerateInterpolator;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -93,7 +90,7 @@ public class TestActivity extends AppCompatActivity {
             DeleteFile(file);
             bitmapRes.clear();
             Looper.prepare();
-            Toast.makeText(getApplicationContext(),"downloading",Toast.LENGTH_SHORT).show();
+            //Toast.makeText(getApplicationContext(),"downloading",Toast.LENGTH_SHORT).show();
             for (int i = 0;i<imgRes.size();i++) {
                 try {
                     saveBitmap(drawable_from_url(imgRes.get(i)),i);
@@ -136,6 +133,8 @@ public class TestActivity extends AppCompatActivity {
         }
     }
 
+    double spendTime = 0;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -143,6 +142,8 @@ public class TestActivity extends AppCompatActivity {
         mImageView = (ImageView) findViewById(R.id.img);
         Thread accessWebServiceThread = new Thread(new WebServiceHandler(""));
         accessWebServiceThread.start();
+        spendTime = getIntent().getDoubleExtra("spendTime", -1);
+        Toast.makeText(this, String.format("Server process %.3f sec", spendTime), Toast.LENGTH_LONG ).show();
     }
 
     private void fadeOutAndHideImage(final ImageView img){

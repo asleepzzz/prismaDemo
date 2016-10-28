@@ -23,7 +23,6 @@ import android.view.LayoutInflater;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.AdapterView;
@@ -510,6 +509,7 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback,
                 try {
                     JSONObject jObj = new JSONObject(serverReply);
                     int mode =jObj.getInt("mode");
+                    double spendTime = jObj.getDouble("time");
                     if (mode ==1) {
                         String url = jObj.getString("file");
                         List<String> bitmapRes = new ArrayList<String>();
@@ -536,6 +536,7 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback,
                         }
                     });
                     Intent intent = new Intent(CameraActivity.this, TestActivity.class);
+                    intent.putExtra("spendTime", spendTime);
 
                     startActivity(intent);
 
